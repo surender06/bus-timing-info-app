@@ -1,0 +1,16 @@
+{
+  "name": "local-bus-timing-app",
+  "version": "1.0.0",
+  "description": "Local bus timing app with passenger, driver, admin, and backend API.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "bus",
+    "timetable",
+    "local-transit"
+  ],
+  "author": "",
+  "license": "MIT"
+}

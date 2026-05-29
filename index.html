@@ -1,0 +1,1223 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Local Bus Timings</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #17202a;
+        --muted: #637083;
+        --line: #dfe6ee;
+        --surface: #ffffff;
+        --soft: #f3f7fb;
+        --brand: #096b72;
+        --brand-dark: #064e55;
+        --accent: #e86f3d;
+        --good: #247b45;
+        --shadow: 0 18px 45px rgba(27, 43, 58, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          linear-gradient(120deg, rgba(9, 107, 114, 0.12), transparent 38%),
+          linear-gradient(300deg, rgba(232, 111, 61, 0.12), transparent 36%),
+          #eef4f8;
+        color: var(--ink);
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      .app-shell {
+        width: min(1180px, calc(100% - 28px));
+        margin: 0 auto;
+        padding: 24px 0;
+      }
+
+      .top-panel {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 18px;
+        align-items: end;
+        padding: 24px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        color: var(--brand);
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        margin-bottom: 10px;
+        font-size: clamp(2rem, 5vw, 4rem);
+        line-height: 1;
+      }
+
+      h2 {
+        margin-bottom: 0;
+        font-size: 1.15rem;
+      }
+
+      .subtext {
+        max-width: 620px;
+        margin-bottom: 0;
+        color: var(--muted);
+        font-size: 1rem;
+      }
+
+      .search-box {
+        display: grid;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 0.86rem;
+        font-weight: 700;
+      }
+
+      .search-box input {
+        width: 100%;
+        min-height: 54px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 0 16px;
+        color: var(--ink);
+        background: var(--soft);
+        outline: none;
+      }
+
+      .search-box input:focus {
+        border-color: var(--brand);
+        box-shadow: 0 0 0 3px rgba(9, 107, 114, 0.15);
+      }
+
+      .quick-row {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 18px 2px;
+      }
+
+      .role-switch {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px;
+        margin-top: 18px;
+        padding: 6px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--soft);
+      }
+
+      .role-button {
+        min-height: 46px;
+        border: 0;
+        border-radius: 7px;
+        color: var(--ink);
+        background: transparent;
+        cursor: pointer;
+        font-weight: 800;
+      }
+
+      .role-button.is-active {
+        color: #ffffff;
+        background: var(--brand);
+      }
+
+      .view {
+        display: none;
+      }
+
+      .view.is-active {
+        display: block;
+      }
+
+      .chip {
+        min-height: 40px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 0 15px;
+        color: var(--ink);
+        background: var(--surface);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .chip.is-active {
+        border-color: var(--brand);
+        color: #ffffff;
+        background: var(--brand);
+      }
+
+      .content-grid {
+        display: grid;
+        grid-template-columns: 390px minmax(0, 1fr);
+        gap: 18px;
+        align-items: start;
+      }
+
+      .route-list,
+      .details-panel {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+
+      .route-list {
+        padding: 16px;
+      }
+
+      .section-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+
+      .section-heading span {
+        min-width: 34px;
+        border-radius: 999px;
+        padding: 5px 9px;
+        color: #ffffff;
+        background: var(--brand-dark);
+        text-align: center;
+        font-size: 0.82rem;
+        font-weight: 700;
+      }
+
+      .route-card {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        margin-bottom: 10px;
+        padding: 14px;
+        background: #ffffff;
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .route-card:hover,
+      .route-card.is-selected {
+        border-color: var(--brand);
+        background: #f0fbfc;
+      }
+
+      .route-top {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .bus-number {
+        display: inline-flex;
+        min-width: 56px;
+        min-height: 36px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        color: #ffffff;
+        background: var(--brand);
+        font-weight: 800;
+      }
+
+      .favorite {
+        border: 0;
+        background: transparent;
+        color: var(--accent);
+        cursor: pointer;
+        font-size: 1.25rem;
+      }
+
+      .route-title {
+        margin: 10px 0 6px;
+        font-weight: 800;
+      }
+
+      .route-meta,
+      .next-line {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .next-line strong {
+        color: var(--good);
+      }
+
+      .details-panel {
+        min-height: 540px;
+        padding: 22px;
+      }
+
+      .empty-state {
+        display: grid;
+        min-height: 490px;
+        place-content: center;
+        text-align: center;
+        color: var(--muted);
+      }
+
+      .detail-header {
+        display: flex;
+        gap: 14px;
+        align-items: start;
+        justify-content: space-between;
+        margin-bottom: 18px;
+      }
+
+      .detail-header h2 {
+        margin: 0 0 8px;
+        font-size: 1.65rem;
+      }
+
+      .icon-button {
+        min-width: 42px;
+        height: 42px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        cursor: pointer;
+        font-size: 1.15rem;
+      }
+
+      .next-box {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .stat {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 13px;
+        background: var(--soft);
+      }
+
+      .stat span {
+        display: block;
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .stat strong {
+        display: block;
+        margin-top: 6px;
+        font-size: 1.1rem;
+      }
+
+      .two-column {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+
+      .mini-panel {
+        border-top: 1px solid var(--line);
+        padding-top: 18px;
+      }
+
+      .mini-panel h3 {
+        margin-bottom: 12px;
+        font-size: 1rem;
+      }
+
+      .stop-list,
+      .time-list {
+        display: grid;
+        gap: 8px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .stop-list li,
+      .time-list li {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 10px 12px;
+        background: #ffffff;
+      }
+
+      .time-list li.is-next {
+        border-color: var(--good);
+        background: #eefaf2;
+        font-weight: 800;
+      }
+
+      .no-results {
+        padding: 18px;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      .driver-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+        gap: 18px;
+        align-items: start;
+      }
+
+      .driver-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 20px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+
+      .driver-form {
+        display: grid;
+        gap: 14px;
+      }
+
+      .field {
+        display: grid;
+        gap: 7px;
+        color: var(--muted);
+        font-size: 0.86rem;
+        font-weight: 700;
+      }
+
+      .field input,
+      .field select,
+      .field textarea {
+        min-height: 46px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 0 12px;
+        color: var(--ink);
+        background: var(--soft);
+        outline: none;
+      }
+
+      .field textarea {
+        min-height: 92px;
+        padding: 12px;
+        resize: vertical;
+      }
+
+      .primary-button {
+        min-height: 48px;
+        border: 0;
+        border-radius: 8px;
+        color: #ffffff;
+        background: var(--brand);
+        cursor: pointer;
+        font-weight: 800;
+      }
+
+      .driver-status {
+        display: grid;
+        gap: 10px;
+      }
+
+      .status-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px;
+        background: #ffffff;
+      }
+
+      .status-row span {
+        color: var(--muted);
+      }
+
+      .admin-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .danger-button {
+        min-height: 40px;
+        border: 1px solid #f0b4a0;
+        border-radius: 8px;
+        color: #9a3412;
+        background: #fff4ef;
+        cursor: pointer;
+        font-weight: 800;
+      }
+
+      .admin-panel {
+        display: none;
+      }
+
+      .admin-panel.is-active {
+        display: block;
+      }
+
+      .success-message {
+        display: none;
+        border: 1px solid #9bd3ad;
+        border-radius: 8px;
+        padding: 12px;
+        color: #176339;
+        background: #effaf2;
+        font-weight: 800;
+      }
+
+      .success-message.is-visible {
+        display: block;
+      }
+
+      @media (max-width: 860px) {
+        .top-panel,
+        .content-grid,
+        .driver-grid,
+        .two-column,
+        .next-box {
+          grid-template-columns: 1fr;
+        }
+
+        .details-panel {
+          min-height: 0;
+        }
+
+        .empty-state {
+          min-height: 220px;
+        }
+      }
+
+      @media (max-width: 520px) {
+        .app-shell {
+          width: min(100% - 18px, 1180px);
+          padding-top: 10px;
+        }
+
+        .top-panel,
+        .route-list,
+        .details-panel {
+          padding: 16px;
+        }
+
+        .detail-header {
+          display: grid;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="top-panel">
+        <div>
+          <p class="eyebrow">Local transit</p>
+          <h1>Bus timing info</h1>
+          <p class="subtext">Search a bus, stop, or destination to find the next ride.</p>
+        </div>
+
+        <label class="search-box" for="searchInput">
+          <span>Search</span>
+          <input id="searchInput" type="search" placeholder="Try 21G, Market, Railway Station" autocomplete="off" />
+        </label>
+      </section>
+
+      <section class="role-switch" aria-label="Choose app mode">
+        <button class="role-button is-active" data-role="passenger">Passenger</button>
+        <button class="role-button" data-role="driver">Driver</button>
+        <button class="role-button" data-role="admin">Admin</button>
+      </section>
+
+      <section id="passengerView" class="view is-active">
+        <section class="quick-row" aria-label="Quick actions">
+          <button class="chip is-active" data-filter="all">All routes</button>
+          <button class="chip" data-filter="morning">Morning</button>
+          <button class="chip" data-filter="evening">Evening</button>
+          <button class="chip" id="showFavorites">Favorites</button>
+        </section>
+
+        <section class="content-grid">
+          <aside class="route-list" aria-label="Bus routes">
+            <div class="section-heading">
+              <h2>Routes</h2>
+              <span id="routeCount">0</span>
+            </div>
+            <div id="routes"></div>
+          </aside>
+
+          <section class="details-panel" aria-live="polite">
+            <div id="routeDetails" class="empty-state">
+              <h2>Select a route</h2>
+              <p>Choose any bus from the left to see stops, timing, and the next available bus.</p>
+            </div>
+          </section>
+        </section>
+      </section>
+
+      <section id="driverView" class="view">
+        <section class="quick-row" aria-label="Driver tools">
+          <button class="chip is-active" type="button">Trip update</button>
+          <button class="chip" type="button">Delay report</button>
+          <button class="chip" type="button">Route status</button>
+        </section>
+
+        <section class="driver-grid">
+          <div class="driver-card">
+            <div class="section-heading">
+              <h2>Driver update</h2>
+              <span>Live</span>
+            </div>
+            <form class="driver-form" id="driverForm">
+              <label class="field">
+                Driver name
+                <input id="driverName" value="Ravi Kumar" />
+              </label>
+              <label class="field">
+                Bus route
+                <select id="driverRoute"></select>
+              </label>
+              <label class="field">
+                Current stop
+                <select id="currentStop"></select>
+              </label>
+              <label class="field">
+                Trip status
+                <select id="tripStatus">
+                  <option>On time</option>
+                  <option>Delayed</option>
+                  <option>Bus full</option>
+                  <option>Trip cancelled</option>
+                </select>
+              </label>
+              <label class="field">
+                Delay minutes
+                <input id="delayMinutes" type="number" min="0" value="0" />
+              </label>
+              <button class="primary-button" type="submit">Update passengers</button>
+            </form>
+          </div>
+
+          <div class="driver-card">
+            <div class="section-heading">
+              <h2>Passenger view status</h2>
+              <span id="driverBusNumber">--</span>
+            </div>
+            <div class="driver-status" id="driverStatus"></div>
+          </div>
+        </section>
+      </section>
+
+      <section id="adminView" class="view">
+        <section class="quick-row" aria-label="Admin tools">
+          <button class="chip is-active" type="button" data-admin-tab="add">Add route</button>
+          <button class="chip" type="button" data-admin-tab="manage">Manage data</button>
+        </section>
+
+        <section class="driver-grid">
+          <div class="driver-card admin-panel is-active" id="adminAddPanel">
+            <div class="section-heading">
+              <h2>Add bus route</h2>
+              <span>Admin</span>
+            </div>
+            <form class="driver-form" id="adminForm">
+              <p class="success-message" id="adminMessage">Route saved. Check Passenger or Driver mode.</p>
+              <label class="field">
+                Bus number
+                <input id="adminNumber" placeholder="Example: 10A" required />
+              </label>
+              <label class="field">
+                From
+                <input id="adminFrom" placeholder="Starting place" required />
+              </label>
+              <label class="field">
+                To
+                <input id="adminTo" placeholder="Ending place" required />
+              </label>
+              <label class="field">
+                Fare
+                <input id="adminFare" type="number" min="0" placeholder="20" required />
+              </label>
+              <label class="field">
+                Duration
+                <input id="adminDuration" placeholder="35 min" required />
+              </label>
+              <label class="field">
+                Stops, comma separated
+                <textarea id="adminStops" placeholder="Bus Stand, Market, Hospital, College" required></textarea>
+              </label>
+              <label class="field">
+                Timings, comma separated
+                <textarea id="adminTimings" placeholder="06:30, 07:15, 08:00, 17:30" required></textarea>
+              </label>
+              <button class="primary-button" type="submit">Save route</button>
+            </form>
+          </div>
+
+          <div class="driver-card admin-panel is-active" id="adminManagePanel">
+            <div class="section-heading">
+              <h2>Saved routes</h2>
+              <span id="adminRouteCount">0</span>
+            </div>
+            <div class="admin-list" id="adminRoutes"></div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const defaultRoutes = [
+        {
+          number: "21G",
+          from: "Central Bus Stand",
+          to: "Railway Station",
+          fare: 18,
+          duration: "32 min",
+          stops: ["Central Bus Stand", "Anna Statue", "Market", "Government Hospital", "Old Bridge", "Railway Station"],
+          timings: ["06:10", "06:45", "07:20", "08:05", "09:30", "11:10", "13:25", "16:15", "17:50", "19:20", "20:40"]
+        },
+        {
+          number: "5A",
+          from: "New Colony",
+          to: "Main Bazaar",
+          fare: 14,
+          duration: "24 min",
+          stops: ["New Colony", "Water Tank", "School Road", "Post Office", "Temple Stop", "Main Bazaar"],
+          timings: ["05:55", "06:35", "07:05", "08:00", "10:15", "12:10", "15:45", "17:15", "18:35", "21:00"]
+        },
+        {
+          number: "44",
+          from: "College Gate",
+          to: "Industrial Estate",
+          fare: 22,
+          duration: "41 min",
+          stops: ["College Gate", "Library", "Market", "Collector Office", "Bypass", "Industrial Estate"],
+          timings: ["06:25", "07:10", "07:55", "08:40", "10:00", "12:35", "14:20", "16:40", "18:10", "19:45"]
+        },
+        {
+          number: "12C",
+          from: "Town Hall",
+          to: "Airport Road",
+          fare: 28,
+          duration: "48 min",
+          stops: ["Town Hall", "Main Bazaar", "Cinema Stop", "Government Hospital", "Ring Road", "Airport Road"],
+          timings: ["05:40", "06:50", "08:15", "09:45", "12:00", "14:10", "16:05", "17:40", "19:15", "22:05"]
+        },
+        {
+          number: "7B",
+          from: "Bus Depot",
+          to: "Lake View",
+          fare: 16,
+          duration: "29 min",
+          stops: ["Bus Depot", "Old Bridge", "Temple Stop", "Lake Road", "Park Entrance", "Lake View"],
+          timings: ["06:00", "06:55", "07:45", "09:05", "11:50", "13:05", "15:30", "17:05", "18:25", "20:10"]
+        }
+      ];
+
+      const API_BASE = "";
+      let routes = [];
+
+      const state = {
+        role: "passenger",
+        query: "",
+        filter: "all",
+        selectedNumber: "",
+        favorites: JSON.parse(localStorage.getItem("busFavorites") || "[]"),
+        driverUpdates: {}
+      };
+
+      const roleButtons = document.querySelectorAll("[data-role]");
+      const passengerView = document.querySelector("#passengerView");
+      const driverView = document.querySelector("#driverView");
+      const adminView = document.querySelector("#adminView");
+      const searchInput = document.querySelector("#searchInput");
+      const routesElement = document.querySelector("#routes");
+      const routeCount = document.querySelector("#routeCount");
+      const routeDetails = document.querySelector("#routeDetails");
+      const chips = document.querySelectorAll(".chip[data-filter]");
+      const showFavorites = document.querySelector("#showFavorites");
+      const driverForm = document.querySelector("#driverForm");
+      const driverName = document.querySelector("#driverName");
+      const driverRoute = document.querySelector("#driverRoute");
+      const currentStop = document.querySelector("#currentStop");
+      const tripStatus = document.querySelector("#tripStatus");
+      const delayMinutes = document.querySelector("#delayMinutes");
+      const driverStatus = document.querySelector("#driverStatus");
+      const driverBusNumber = document.querySelector("#driverBusNumber");
+      const adminForm = document.querySelector("#adminForm");
+      const adminNumber = document.querySelector("#adminNumber");
+      const adminFrom = document.querySelector("#adminFrom");
+      const adminTo = document.querySelector("#adminTo");
+      const adminFare = document.querySelector("#adminFare");
+      const adminDuration = document.querySelector("#adminDuration");
+      const adminStops = document.querySelector("#adminStops");
+      const adminTimings = document.querySelector("#adminTimings");
+      const adminRoutes = document.querySelector("#adminRoutes");
+      const adminRouteCount = document.querySelector("#adminRouteCount");
+      const adminTabButtons = document.querySelectorAll("[data-admin-tab]");
+      const adminAddPanel = document.querySelector("#adminAddPanel");
+      const adminManagePanel = document.querySelector("#adminManagePanel");
+      const adminMessage = document.querySelector("#adminMessage");
+
+      function minutesFromTime(time) {
+        const [hours, minutes] = time.split(":").map(Number);
+        return hours * 60 + minutes;
+      }
+
+      function getCurrentMinutes() {
+        const now = new Date();
+        return now.getHours() * 60 + now.getMinutes();
+      }
+
+      function getNextTiming(route) {
+        const current = getCurrentMinutes();
+        return route.timings.find((time) => minutesFromTime(time) >= current) || route.timings[0];
+      }
+
+      function getWaitText(time) {
+        const current = getCurrentMinutes();
+        let difference = minutesFromTime(time) - current;
+        if (difference < 0) difference += 24 * 60;
+        if (difference === 0) return "Now";
+        if (difference < 60) return `${difference} min`;
+        const hours = Math.floor(difference / 60);
+        const minutes = difference % 60;
+        return minutes ? `${hours} hr ${minutes} min` : `${hours} hr`;
+      }
+
+      function routeMatchesQuery(route) {
+        const text = `${route.number} ${route.from} ${route.to} ${route.stops.join(" ")}`.toLowerCase();
+        return text.includes(state.query.toLowerCase().trim());
+      }
+
+      function routeMatchesFilter(route) {
+        if (state.filter === "morning") return route.timings.some((time) => minutesFromTime(time) < 12 * 60);
+        if (state.filter === "evening") return route.timings.some((time) => minutesFromTime(time) >= 16 * 60);
+        if (state.filter === "favorites") return state.favorites.includes(route.number);
+        return true;
+      }
+
+      function getVisibleRoutes() {
+        return routes.filter((route) => routeMatchesQuery(route) && routeMatchesFilter(route));
+      }
+
+      async function apiRequest(path, options = {}) {
+        const response = await fetch(`${API_BASE}${path}`, {
+          headers: { "Content-Type": "application/json" },
+          ...options
+        });
+
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({ error: "Request failed" }));
+          throw new Error(error.error || "Request failed");
+        }
+
+        return response.json();
+      }
+
+      async function loadServerData() {
+        try {
+          const [serverRoutes, serverDriverUpdates] = await Promise.all([
+            apiRequest("/api/routes"),
+            apiRequest("/api/driver-updates")
+          ]);
+          routes = serverRoutes;
+          state.driverUpdates = serverDriverUpdates;
+          if (!routes.some((route) => route.number === state.selectedNumber)) {
+            state.selectedNumber = routes[0]?.number || "";
+          }
+        } catch {
+          routes = defaultRoutes;
+          state.driverUpdates = {};
+          state.selectedNumber = routes[0]?.number || "";
+          showAdminMessage("Start the backend server to save shared data.");
+        }
+
+        populateDriverRouteOptions();
+        populateStopOptions();
+        render();
+      }
+
+      function saveFavorites() {
+        localStorage.setItem("busFavorites", JSON.stringify(state.favorites));
+      }
+
+      function saveDriverUpdates() {
+        return true;
+      }
+
+      function saveRoutes() {
+        return true;
+      }
+
+      function toggleFavorite(number) {
+        if (state.favorites.includes(number)) {
+          state.favorites = state.favorites.filter((item) => item !== number);
+        } else {
+          state.favorites = [...state.favorites, number];
+        }
+        saveFavorites();
+        render();
+      }
+
+      function selectRoute(number) {
+        state.selectedNumber = number;
+        render();
+      }
+
+      function getDriverUpdate(routeNumber) {
+        return state.driverUpdates[routeNumber] || {
+          driver: "Not assigned",
+          stop: "Not updated",
+          status: "Waiting for driver update",
+          delay: "0",
+          updatedAt: "Not updated yet"
+        };
+      }
+
+      function setRole(role) {
+        state.role = role;
+        roleButtons.forEach((button) => button.classList.toggle("is-active", button.dataset.role === role));
+        passengerView.classList.toggle("is-active", role === "passenger");
+        driverView.classList.toggle("is-active", role === "driver");
+        adminView.classList.toggle("is-active", role === "admin");
+        render();
+      }
+
+      function setAdminTab(tab) {
+        adminTabButtons.forEach((button) => button.classList.toggle("is-active", button.dataset.adminTab === tab));
+        adminAddPanel.classList.toggle("is-active", tab === "add");
+        adminManagePanel.classList.toggle("is-active", tab === "manage");
+      }
+
+      function showAdminMessage(text) {
+        adminMessage.textContent = text;
+        adminMessage.classList.add("is-visible");
+        window.setTimeout(() => adminMessage.classList.remove("is-visible"), 2500);
+      }
+
+      function populateDriverRouteOptions() {
+        const selectedRoute = driverRoute.value;
+        if (!routes.length) {
+          driverRoute.innerHTML = "";
+          return;
+        }
+        driverRoute.innerHTML = routes
+          .map((route) => `<option value="${route.number}">${route.number} - ${route.from} to ${route.to}</option>`)
+          .join("");
+        if (routes.some((route) => route.number === selectedRoute)) {
+          driverRoute.value = selectedRoute;
+        }
+      }
+
+      function populateStopOptions() {
+        const selectedStop = currentStop.value;
+        const route = routes.find((item) => item.number === driverRoute.value) || routes[0];
+        if (!route) {
+          currentStop.innerHTML = "";
+          return;
+        }
+        currentStop.innerHTML = route.stops.map((stop) => `<option>${stop}</option>`).join("");
+        if (route.stops.includes(selectedStop)) {
+          currentStop.value = selectedStop;
+        }
+      }
+
+      function renderDriverStatus() {
+        const route = routes.find((item) => item.number === driverRoute.value) || routes[0];
+        if (!route) {
+          driverBusNumber.textContent = "--";
+          driverStatus.innerHTML = '<p class="no-results">No route available. Add a route in Admin.</p>';
+          return;
+        }
+        const update = getDriverUpdate(route.number);
+        driverBusNumber.textContent = route.number;
+        driverStatus.innerHTML = `
+          <div class="status-row"><strong>Route</strong><span>${route.from} to ${route.to}</span></div>
+          <div class="status-row"><strong>Driver</strong><span>${update.driver}</span></div>
+          <div class="status-row"><strong>Current stop</strong><span>${update.stop}</span></div>
+          <div class="status-row"><strong>Status</strong><span>${update.status}</span></div>
+          <div class="status-row"><strong>Delay</strong><span>${update.delay} min</span></div>
+          <div class="status-row"><strong>Updated</strong><span>${update.updatedAt}</span></div>
+        `;
+      }
+
+      function renderAdminRoutes() {
+        adminRouteCount.textContent = routes.length;
+        if (!routes.length) {
+          adminRoutes.innerHTML = '<p class="no-results">No saved route. Add your first bus route.</p>';
+          return;
+        }
+
+        adminRoutes.innerHTML = routes
+          .map((route) => `
+            <div class="status-row">
+              <div>
+                <strong>${route.number}</strong>
+                <p class="route-meta">${route.from} to ${route.to}</p>
+              </div>
+              <button class="danger-button" type="button" data-delete-route="${route.number}">Delete</button>
+            </div>
+          `)
+          .join("");
+      }
+
+      function renderRoutes() {
+        const visibleRoutes = getVisibleRoutes();
+        routeCount.textContent = visibleRoutes.length;
+
+        if (!visibleRoutes.length) {
+          routesElement.innerHTML = '<p class="no-results">No bus found. Try another route, stop, or place.</p>';
+          return;
+        }
+
+        routesElement.innerHTML = visibleRoutes
+          .map((route) => {
+            const next = getNextTiming(route);
+            const favoriteMark = state.favorites.includes(route.number) ? "★" : "☆";
+            const selectedClass = route.number === state.selectedNumber ? " is-selected" : "";
+            const update = getDriverUpdate(route.number);
+
+            return `
+              <button class="route-card${selectedClass}" data-route="${route.number}">
+                <div class="route-top">
+                  <span class="bus-number">${route.number}</span>
+                  <span class="favorite" data-favorite="${route.number}" title="Favorite">${favoriteMark}</span>
+                </div>
+                <p class="route-title">${route.from} to ${route.to}</p>
+                <p class="route-meta">${route.stops.length} stops · ${route.duration} · Rs.${route.fare}</p>
+                <p class="next-line">Next bus <strong>${next}</strong> · ${getWaitText(next)}</p>
+                <p class="next-line">Driver: <strong>${update.status}</strong></p>
+              </button>
+            `;
+          })
+          .join("");
+      }
+
+      function renderDetails() {
+        const route = routes.find((item) => item.number === state.selectedNumber) || getVisibleRoutes()[0];
+
+        if (!route) {
+          routeDetails.className = "empty-state";
+          routeDetails.innerHTML = `
+            <h2>No route selected</h2>
+            <p>Search again or switch back to all routes.</p>
+          `;
+          return;
+        }
+
+        state.selectedNumber = route.number;
+        const next = getNextTiming(route);
+        const favoriteMark = state.favorites.includes(route.number) ? "★" : "☆";
+        const update = getDriverUpdate(route.number);
+
+        routeDetails.className = "";
+        routeDetails.innerHTML = `
+          <div class="detail-header">
+            <div>
+              <span class="bus-number">${route.number}</span>
+              <h2>${route.from} to ${route.to}</h2>
+              <p class="route-meta">${route.duration} travel time · Rs.${route.fare} fare · ${route.stops.length} stops</p>
+            </div>
+            <button class="icon-button" data-favorite="${route.number}" title="Favorite">${favoriteMark}</button>
+          </div>
+
+          <div class="next-box">
+            <div class="stat"><span>Next bus</span><strong>${next}</strong></div>
+            <div class="stat"><span>Wait time</span><strong>${getWaitText(next)}</strong></div>
+            <div class="stat"><span>Last bus</span><strong>${route.timings[route.timings.length - 1]}</strong></div>
+            <div class="stat"><span>Driver status</span><strong>${update.status}</strong></div>
+            <div class="stat"><span>Current stop</span><strong>${update.stop}</strong></div>
+            <div class="stat"><span>Delay</span><strong>${update.delay} min</strong></div>
+          </div>
+
+          <div class="two-column">
+            <div class="mini-panel">
+              <h3>Stops</h3>
+              <ol class="stop-list">
+                ${route.stops.map((stop, index) => `<li><span>${index + 1}. ${stop}</span></li>`).join("")}
+              </ol>
+            </div>
+            <div class="mini-panel">
+              <h3>Timings</h3>
+              <ul class="time-list">
+                ${route.timings.map((time) => `<li class="${time === next ? "is-next" : ""}"><span>${time}</span><span>${time === next ? "Next" : ""}</span></li>`).join("")}
+              </ul>
+            </div>
+          </div>
+        `;
+      }
+
+      function render() {
+        renderRoutes();
+        renderDetails();
+        renderDriverStatus();
+        renderAdminRoutes();
+      }
+
+      roleButtons.forEach((button) => {
+        button.addEventListener("click", () => setRole(button.dataset.role));
+      });
+
+      adminTabButtons.forEach((button) => {
+        button.addEventListener("click", () => setAdminTab(button.dataset.adminTab));
+      });
+
+      searchInput.addEventListener("input", (event) => {
+        state.query = event.target.value;
+        const firstVisible = getVisibleRoutes()[0];
+        if (firstVisible) state.selectedNumber = firstVisible.number;
+        render();
+      });
+
+      chips.forEach((chip) => {
+        chip.addEventListener("click", () => {
+          state.filter = chip.dataset.filter;
+          chips.forEach((item) => item.classList.toggle("is-active", item === chip));
+          showFavorites.classList.remove("is-active");
+          const firstVisible = getVisibleRoutes()[0];
+          if (firstVisible) state.selectedNumber = firstVisible.number;
+          render();
+        });
+      });
+
+      showFavorites.addEventListener("click", () => {
+        state.filter = "favorites";
+        chips.forEach((item) => item.classList.remove("is-active"));
+        showFavorites.classList.add("is-active");
+        const firstVisible = getVisibleRoutes()[0];
+        if (firstVisible) state.selectedNumber = firstVisible.number;
+        render();
+      });
+
+      driverRoute.addEventListener("change", () => {
+        populateStopOptions();
+        renderDriverStatus();
+      });
+
+      driverForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!driverRoute.value) return;
+        try {
+          const update = await apiRequest("/api/driver-updates", {
+            method: "POST",
+            body: JSON.stringify({
+              routeNumber: driverRoute.value,
+              driver: driverName.value.trim() || "Driver",
+              stop: currentStop.value,
+              status: tripStatus.value,
+              delay: delayMinutes.value || "0"
+            })
+          });
+          state.driverUpdates[driverRoute.value] = update;
+          state.selectedNumber = driverRoute.value;
+          render();
+        } catch (error) {
+          showAdminMessage(error.message);
+        }
+      });
+
+      adminForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const number = adminNumber.value.trim().toUpperCase();
+        const stops = adminStops.value.split(",").map((stop) => stop.trim()).filter(Boolean);
+        const timings = adminTimings.value.split(",").map((time) => time.trim()).filter(Boolean);
+
+        if (!number || !stops.length || !timings.length) return;
+
+        const newRoute = {
+          number,
+          from: adminFrom.value.trim(),
+          to: adminTo.value.trim(),
+          fare: Number(adminFare.value || 0),
+          duration: adminDuration.value.trim(),
+          stops,
+          timings
+        };
+
+        try {
+          const savedRoute = await apiRequest("/api/routes", {
+            method: "POST",
+            body: JSON.stringify(newRoute)
+          });
+          const existingIndex = routes.findIndex((route) => route.number.toLowerCase() === number.toLowerCase());
+          if (existingIndex >= 0) {
+            routes[existingIndex] = savedRoute;
+          } else {
+            routes = [...routes, savedRoute];
+          }
+
+          state.selectedNumber = number;
+          populateDriverRouteOptions();
+          driverRoute.value = number;
+          populateStopOptions();
+          adminForm.reset();
+          showAdminMessage(`${number} route saved.`);
+          setAdminTab("manage");
+          render();
+        } catch (error) {
+          showAdminMessage(error.message);
+        }
+      });
+
+      document.addEventListener("click", async (event) => {
+        const favoriteTarget = event.target.closest("[data-favorite]");
+        if (favoriteTarget) {
+          event.stopPropagation();
+          toggleFavorite(favoriteTarget.dataset.favorite);
+          return;
+        }
+
+        const deleteTarget = event.target.closest("[data-delete-route]");
+        if (deleteTarget) {
+          const number = deleteTarget.dataset.deleteRoute;
+          try {
+            await apiRequest(`/api/routes/${encodeURIComponent(number)}`, { method: "DELETE" });
+            routes = routes.filter((route) => route.number !== number);
+            delete state.driverUpdates[number];
+            state.favorites = state.favorites.filter((item) => item !== number);
+            state.selectedNumber = routes[0]?.number || "";
+            saveFavorites();
+            populateDriverRouteOptions();
+            populateStopOptions();
+            setAdminTab("manage");
+            render();
+          } catch (error) {
+            showAdminMessage(error.message);
+          }
+          return;
+        }
+
+        const routeCard = event.target.closest("[data-route]");
+        if (routeCard) selectRoute(routeCard.dataset.route);
+      });
+
+      setAdminTab("add");
+      loadServerData();
+      window.setInterval(loadServerData, 5000);
+    </script>
+  </body>
+</html>

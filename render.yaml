@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: bus-timing-info-app
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start

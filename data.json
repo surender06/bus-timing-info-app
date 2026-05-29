@@ -1,0 +1,89 @@
+{
+    "routes":  [
+                   {
+                       "number":  "21G",
+                       "from":  "Central Bus Stand",
+                       "to":  "Railway Station",
+                       "fare":  18,
+                       "duration":  "32 min",
+                       "stops":  [
+                                     "Central Bus Stand",
+                                     "Anna Statue",
+                                     "Market",
+                                     "Government Hospital",
+                                     "Old Bridge",
+                                     "Railway Station"
+                                 ],
+                       "timings":  [
+                                       "06:10",
+                                       "06:45",
+                                       "07:20",
+                                       "08:05",
+                                       "09:30",
+                                       "11:10",
+                                       "13:25",
+                                       "16:15",
+                                       "17:50",
+                                       "19:20",
+                                       "20:40"
+                                   ]
+                   },
+                   {
+                       "number":  "5A",
+                       "from":  "New Colony",
+                       "to":  "Main Bazaar",
+                       "fare":  14,
+                       "duration":  "24 min",
+                       "stops":  [
+                                     "New Colony",
+                                     "Water Tank",
+                                     "School Road",
+                                     "Post Office",
+                                     "Temple Stop",
+                                     "Main Bazaar"
+                                 ],
+                       "timings":  [
+                                       "05:55",
+                                       "06:35",
+                                       "07:05",
+                                       "08:00",
+                                       "10:15",
+                                       "12:10",
+                                       "15:45",
+                                       "17:15",
+                                       "18:35",
+                                       "21:00"
+                                   ]
+                   },
+                   {
+                       "number":  "44",
+                       "from":  "College Gate",
+                       "to":  "Industrial Estate",
+                       "fare":  22,
+                       "duration":  "41 min",
+                       "stops":  [
+                                     "College Gate",
+                                     "Library",
+                                     "Market",
+                                     "Collector Office",
+                                     "Bypass",
+                                     "Industrial Estate"
+                                 ],
+                       "timings":  [
+                                       "06:25",
+                                       "07:10",
+                                       "07:55",
+                                       "08:40",
+                                       "10:00",
+                                       "12:35",
+                                       "14:20",
+                                       "16:40",
+                                       "18:10",
+                                       "19:45"
+                                   ]
+                   }
+               ],
+    "driverUpdates":  {
+
+                      }
+}
