@@ -10,6 +10,7 @@ A local bus timing web app with passenger, driver, admin, and backend API featur
 - Passenger screen refreshes backend updates automatically
 - Passengers can submit feedback with rating and experience details
 - Admin can add and delete bus routes
+- Driver and admin areas are password protected
 - Route and driver data is saved in `data.json`
 
 ## Run Locally
@@ -38,8 +39,18 @@ Start Bus App.bat
 2. Create a new Render web service from the repo.
 3. Use `npm install` as the build command.
 4. Use `npm start` as the start command.
+5. Add environment variables for safer passwords:
+   - `DRIVER_KEY`
+   - `ADMIN_KEY`
 
 The app uses `process.env.PORT`, so Render can run it on the correct hosted port.
+
+## Default Demo Passwords
+
+- Driver: `driver123`
+- Admin: `admin123`
+
+For public deployment, change these using Render environment variables.
 
 ## Note
 

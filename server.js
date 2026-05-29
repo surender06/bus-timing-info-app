@@ -5,6 +5,8 @@ const path = require("path");
 const PORT = process.env.PORT || 4173;
 const ROOT = __dirname;
 const DATA_FILE = path.join(ROOT, "data.json");
+const DRIVER_KEY = process.env.DRIVER_KEY || "driver123";
+const ADMIN_KEY = process.env.ADMIN_KEY || "admin123";
 
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
@@ -60,6 +62,14 @@ function cleanRoute(route) {
   };
 }
 
+function hasDriverAccess(request) {
+  return request.headers["x-driver-key"] === DRIVER_KEY || request.headers["x-admin-key"] === ADMIN_KEY;
+}
+
+function hasAdminAccess(request) {
+  return request.headers["x-admin-key"] === ADMIN_KEY;
+}
+
 async function handleApi(request, response, url) {
   const data = await readData();
   data.routes ||= [];
@@ -72,6 +82,11 @@ async function handleApi(request, response, url) {
   }
 
   if (request.method === "POST" && url.pathname === "/api/routes") {
+    if (!hasAdminAccess(request)) {
+      sendJson(response, 401, { error: "Admin password is required." });
+      return;
+    }
+
     const route = cleanRoute(await readBody(request));
     if (!route.number || !route.from || !route.to || !route.stops.length || !route.timings.length) {
       sendJson(response, 400, { error: "Bus number, from, to, stops, and timings are required." });
@@ -91,6 +106,11 @@ async function handleApi(request, response, url) {
   }
 
   if (request.method === "DELETE" && url.pathname.startsWith("/api/routes/")) {
+    if (!hasAdminAccess(request)) {
+      sendJson(response, 401, { error: "Admin password is required." });
+      return;
+    }
+
     const number = decodeURIComponent(url.pathname.replace("/api/routes/", ""));
     data.routes = data.routes.filter((route) => route.number !== number);
     delete data.driverUpdates[number];
@@ -105,6 +125,11 @@ async function handleApi(request, response, url) {
   }
 
   if (request.method === "POST" && url.pathname === "/api/driver-updates") {
+    if (!hasDriverAccess(request)) {
+      sendJson(response, 401, { error: "Driver password is required." });
+      return;
+    }
+
     const update = await readBody(request);
     const routeNumber = String(update.routeNumber || "").trim().toUpperCase();
     if (!routeNumber) {

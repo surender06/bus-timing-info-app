@@ -3,6 +3,8 @@ $ErrorActionPreference = "Stop"
 $port = 4173
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $dataFile = Join-Path $root "data.json"
+$driverKey = if ($env:DRIVER_KEY) { $env:DRIVER_KEY } else { "driver123" }
+$adminKey = if ($env:ADMIN_KEY) { $env:ADMIN_KEY } else { "admin123" }
 $listener = [System.Net.HttpListener]::new()
 $listener.Prefixes.Add("http://localhost:$port/")
 $listener.Prefixes.Add("http://127.0.0.1:$port/")
@@ -50,6 +52,14 @@ function Normalize-Route($Route) {
   }
 }
 
+function Has-DriverAccess($Request) {
+  return $Request.Headers["x-driver-key"] -eq $driverKey -or $Request.Headers["x-admin-key"] -eq $adminKey
+}
+
+function Has-AdminAccess($Request) {
+  return $Request.Headers["x-admin-key"] -eq $adminKey
+}
+
 function Handle-Api($Context, [string]$Path) {
   $request = $Context.Request
   $response = $Context.Response
@@ -64,6 +74,11 @@ function Handle-Api($Context, [string]$Path) {
   }
 
   if ($request.HttpMethod -eq "POST" -and $Path -eq "/api/routes") {
+    if (-not (Has-AdminAccess $request)) {
+      Send-Json $response 401 @{ error = "Admin password is required." }
+      return
+    }
+
     $route = Normalize-Route (Read-JsonBody $request)
     if (-not $route.number -or -not $route.from -or -not $route.to -or $route.stops.Count -eq 0 -or $route.timings.Count -eq 0) {
       Send-Json $response 400 @{ error = "Bus number, from, to, stops, and timings are required." }
@@ -78,6 +93,11 @@ function Handle-Api($Context, [string]$Path) {
   }
 
   if ($request.HttpMethod -eq "DELETE" -and $Path.StartsWith("/api/routes/")) {
+    if (-not (Has-AdminAccess $request)) {
+      Send-Json $response 401 @{ error = "Admin password is required." }
+      return
+    }
+
     $number = [System.Uri]::UnescapeDataString($Path.Replace("/api/routes/", ""))
     $data.routes = @($data.routes | Where-Object { $_.number -ne $number })
     if ($data.driverUpdates.PSObject.Properties.Name -contains $number) {
@@ -94,6 +114,11 @@ function Handle-Api($Context, [string]$Path) {
   }
 
   if ($request.HttpMethod -eq "POST" -and $Path -eq "/api/driver-updates") {
+    if (-not (Has-DriverAccess $request)) {
+      Send-Json $response 401 @{ error = "Driver password is required." }
+      return
+    }
+
     $body = Read-JsonBody $request
     $routeNumber = ([string]$body.routeNumber).Trim().ToUpperInvariant()
     if (-not $routeNumber) {
