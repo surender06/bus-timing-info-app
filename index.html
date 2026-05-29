@@ -149,21 +149,6 @@
         background: var(--brand);
       }
 
-      .role-lock {
-        display: none;
-        margin-top: 12px;
-        border: 1px solid #f0b4a0;
-        border-radius: 8px;
-        padding: 12px;
-        color: #9a3412;
-        background: #fff4ef;
-        font-weight: 800;
-      }
-
-      .role-lock.is-visible {
-        display: block;
-      }
-
       .view {
         display: none;
       }
@@ -521,6 +506,103 @@
         display: block;
       }
 
+      .auth-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        display: none;
+        place-items: center;
+        padding: 18px;
+        background: rgba(23, 32, 42, 0.46);
+      }
+
+      .auth-overlay.is-visible {
+        display: grid;
+      }
+
+      .auth-dialog {
+        width: min(430px, 100%);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 20px;
+        background: var(--surface);
+        box-shadow: 0 24px 70px rgba(23, 32, 42, 0.24);
+      }
+
+      .auth-header {
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 18px;
+      }
+
+      .auth-badge {
+        display: inline-grid;
+        min-width: 58px;
+        min-height: 34px;
+        place-items: center;
+        border-radius: 8px;
+        color: #ffffff;
+        background: var(--brand);
+        font-size: 0.78rem;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      .auth-header h2 {
+        margin: 10px 0 4px;
+        font-size: 1.45rem;
+      }
+
+      .auth-header p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .auth-close {
+        min-width: 38px;
+        height: 38px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--soft);
+        cursor: pointer;
+        font-size: 1.1rem;
+      }
+
+      .password-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+      }
+
+      .secondary-button {
+        min-height: 46px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 0 14px;
+        color: var(--ink);
+        background: var(--surface);
+        cursor: pointer;
+        font-weight: 800;
+      }
+
+      .auth-error {
+        min-height: 20px;
+        margin: 2px 0 0;
+        color: #9a3412;
+        font-size: 0.88rem;
+        font-weight: 800;
+      }
+
+      .auth-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
       @media (max-width: 860px) {
         .top-panel,
         .content-grid,
@@ -578,7 +660,6 @@
         <button class="role-button" data-role="driver">Driver</button>
         <button class="role-button" data-role="admin">Admin</button>
       </section>
-      <p class="role-lock" id="roleLockMessage">Protected area. Enter the correct password.</p>
 
       <section id="passengerView" class="view is-active">
         <section class="quick-row" aria-label="Quick actions">
@@ -748,6 +829,31 @@
       </section>
     </main>
 
+    <section class="auth-overlay" id="authOverlay" aria-hidden="true">
+      <form class="auth-dialog" id="authForm">
+        <div class="auth-header">
+          <div>
+            <span class="auth-badge" id="authBadge">Role</span>
+            <h2 id="authTitle">Protected access</h2>
+            <p id="authText">Enter your password to continue.</p>
+          </div>
+          <button class="auth-close" id="authClose" type="button" aria-label="Close">x</button>
+        </div>
+        <label class="field">
+          Password
+          <div class="password-row">
+            <input id="authPassword" type="password" autocomplete="current-password" placeholder="Enter password" />
+            <button class="secondary-button" id="togglePassword" type="button">Show</button>
+          </div>
+        </label>
+        <p class="auth-error" id="authError"></p>
+        <div class="auth-actions">
+          <button class="secondary-button" id="authCancel" type="button">Cancel</button>
+          <button class="primary-button" type="submit">Unlock</button>
+        </div>
+      </form>
+    </section>
+
     <script>
       const defaultRoutes = [
         {
@@ -807,6 +913,7 @@
       const state = {
         role: "passenger",
         unlockedRoles: JSON.parse(sessionStorage.getItem("unlockedRoles") || "[]"),
+        pendingRole: "",
         query: "",
         filter: "all",
         selectedNumber: "",
@@ -819,7 +926,16 @@
       const passengerView = document.querySelector("#passengerView");
       const driverView = document.querySelector("#driverView");
       const adminView = document.querySelector("#adminView");
-      const roleLockMessage = document.querySelector("#roleLockMessage");
+      const authOverlay = document.querySelector("#authOverlay");
+      const authForm = document.querySelector("#authForm");
+      const authBadge = document.querySelector("#authBadge");
+      const authTitle = document.querySelector("#authTitle");
+      const authText = document.querySelector("#authText");
+      const authPassword = document.querySelector("#authPassword");
+      const authError = document.querySelector("#authError");
+      const authClose = document.querySelector("#authClose");
+      const authCancel = document.querySelector("#authCancel");
+      const togglePassword = document.querySelector("#togglePassword");
       const searchInput = document.querySelector("#searchInput");
       const routesElement = document.querySelector("#routes");
       const routeCount = document.querySelector("#routeCount");
@@ -988,27 +1104,47 @@
         };
       }
 
-      function showRoleLockMessage(text) {
-        roleLockMessage.textContent = text;
-        roleLockMessage.classList.add("is-visible");
-        window.setTimeout(() => roleLockMessage.classList.remove("is-visible"), 3000);
+      function getRoleName(role) {
+        return role[0].toUpperCase() + role.slice(1);
       }
 
-      function unlockRole(role) {
-        if (role === "passenger" || state.unlockedRoles.includes(role)) return true;
-        const password = window.prompt(`Enter ${role} password`);
+      function openAuthModal(role) {
+        state.pendingRole = role;
+        authBadge.textContent = role;
+        authTitle.textContent = `${getRoleName(role)} login`;
+        authText.textContent = role === "admin" ? "Manage routes and protected app data." : "Update trip status for passengers.";
+        authPassword.value = "";
+        authPassword.type = "password";
+        togglePassword.textContent = "Show";
+        authError.textContent = "";
+        authOverlay.classList.add("is-visible");
+        authOverlay.setAttribute("aria-hidden", "false");
+        window.setTimeout(() => authPassword.focus(), 0);
+      }
+
+      function closeAuthModal() {
+        authOverlay.classList.remove("is-visible");
+        authOverlay.setAttribute("aria-hidden", "true");
+        state.pendingRole = "";
+      }
+
+      function unlockRole(role, password) {
         if (password === ROLE_KEYS[role]) {
-          state.unlockedRoles = [...state.unlockedRoles, role];
+          state.unlockedRoles = [...new Set([...state.unlockedRoles, role])];
           sessionStorage.setItem("unlockedRoles", JSON.stringify(state.unlockedRoles));
-          showRoleLockMessage(`${role[0].toUpperCase() + role.slice(1)} access unlocked.`);
-          return true;
+          closeAuthModal();
+          setRole(role);
+          return;
         }
-        showRoleLockMessage("Wrong password. Passenger mode is still open.");
-        return false;
+        authError.textContent = "Wrong password. Try again.";
+        authPassword.select();
       }
 
       function setRole(role) {
-        if (!unlockRole(role)) return;
+        if (role !== "passenger" && !state.unlockedRoles.includes(role)) {
+          openAuthModal(role);
+          return;
+        }
         state.role = role;
         roleButtons.forEach((button) => button.classList.toggle("is-active", button.dataset.role === role));
         passengerView.classList.toggle("is-active", role === "passenger");
@@ -1219,6 +1355,25 @@
 
       roleButtons.forEach((button) => {
         button.addEventListener("click", () => setRole(button.dataset.role));
+      });
+
+      authForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (!state.pendingRole) return;
+        unlockRole(state.pendingRole, authPassword.value);
+      });
+
+      authClose.addEventListener("click", closeAuthModal);
+      authCancel.addEventListener("click", closeAuthModal);
+      authOverlay.addEventListener("click", (event) => {
+        if (event.target === authOverlay) closeAuthModal();
+      });
+
+      togglePassword.addEventListener("click", () => {
+        const isHidden = authPassword.type === "password";
+        authPassword.type = isHidden ? "text" : "password";
+        togglePassword.textContent = isHidden ? "Hide" : "Show";
+        authPassword.focus();
       });
 
       adminTabButtons.forEach((button) => {
