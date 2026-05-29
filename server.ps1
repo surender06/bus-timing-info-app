@@ -54,6 +54,9 @@ function Handle-Api($Context, [string]$Path) {
   $request = $Context.Request
   $response = $Context.Response
   $data = Read-Data
+  if (-not ($data.PSObject.Properties.Name -contains "feedback")) {
+    $data | Add-Member -NotePropertyName feedback -NotePropertyValue @()
+  }
 
   if ($request.HttpMethod -eq "GET" -and $Path -eq "/api/routes") {
     Send-Json $response 200 @($data.routes)
@@ -108,6 +111,38 @@ function Handle-Api($Context, [string]$Path) {
 
     Write-Data $data
     Send-Json $response 200 $data.driverUpdates.$routeNumber
+    return
+  }
+
+  if ($request.HttpMethod -eq "GET" -and $Path -eq "/api/feedback") {
+    Send-Json $response 200 @($data.feedback)
+    return
+  }
+
+  if ($request.HttpMethod -eq "POST" -and $Path -eq "/api/feedback") {
+    $body = Read-JsonBody $request
+    $name = ([string]$body.name).Trim()
+    $experience = ([string]$body.experience).Trim()
+    if (-not $name -or -not $experience) {
+      Send-Json $response 400 @{ error = "Name and experience are required." }
+      return
+    }
+
+    $rating = [int]$body.rating
+    if ($rating -lt 1) { $rating = 1 }
+    if ($rating -gt 5) { $rating = 5 }
+
+    $entry = [pscustomobject]@{
+      id = [string]([DateTimeOffset]::Now.ToUnixTimeMilliseconds())
+      name = $name
+      rating = $rating
+      experience = $experience
+      createdAt = (Get-Date).ToUniversalTime().ToString("o")
+    }
+
+    $data.feedback = @($data.feedback) + $entry
+    Write-Data $data
+    Send-Json $response 200 $entry
     return
   }
 

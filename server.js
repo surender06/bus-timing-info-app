@@ -62,6 +62,9 @@ function cleanRoute(route) {
 
 async function handleApi(request, response, url) {
   const data = await readData();
+  data.routes ||= [];
+  data.driverUpdates ||= {};
+  data.feedback ||= [];
 
   if (request.method === "GET" && url.pathname === "/api/routes") {
     sendJson(response, 200, data.routes);
@@ -119,6 +122,32 @@ async function handleApi(request, response, url) {
 
     await writeData(data);
     sendJson(response, 200, data.driverUpdates[routeNumber]);
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/feedback") {
+    sendJson(response, 200, data.feedback);
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/feedback") {
+    const feedback = await readBody(request);
+    const entry = {
+      id: Date.now().toString(),
+      name: String(feedback.name || "").trim(),
+      rating: Math.min(5, Math.max(1, Number(feedback.rating || 5))),
+      experience: String(feedback.experience || "").trim(),
+      createdAt: new Date().toISOString()
+    };
+
+    if (!entry.name || !entry.experience) {
+      sendJson(response, 400, { error: "Name and experience are required." });
+      return;
+    }
+
+    data.feedback.push(entry);
+    await writeData(data);
+    sendJson(response, 200, entry);
     return;
   }
 

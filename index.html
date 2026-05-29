@@ -444,6 +444,17 @@
         gap: 10px;
       }
 
+      .feedback-panel {
+        margin-top: 18px;
+      }
+
+      .feedback-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+        gap: 18px;
+        align-items: start;
+      }
+
       .status-row {
         display: flex;
         justify-content: space-between;
@@ -499,6 +510,7 @@
         .top-panel,
         .content-grid,
         .driver-grid,
+        .feedback-layout,
         .two-column,
         .next-box {
           grid-template-columns: 1fr;
@@ -575,6 +587,38 @@
               <p>Choose any bus from the left to see stops, timing, and the next available bus.</p>
             </div>
           </section>
+        </section>
+
+        <section class="driver-card feedback-panel">
+          <div class="section-heading">
+            <h2>Passenger feedback</h2>
+            <span id="feedbackCount">0</span>
+          </div>
+          <div class="feedback-layout">
+            <form class="driver-form" id="feedbackForm">
+              <p class="success-message" id="feedbackMessage">Thanks for your feedback.</p>
+              <label class="field">
+                Your name
+                <input id="feedbackName" placeholder="Example: Kumar" required />
+              </label>
+              <label class="field">
+                Rating
+                <select id="feedbackRating" required>
+                  <option value="5">5 - Excellent</option>
+                  <option value="4">4 - Good</option>
+                  <option value="3">3 - Average</option>
+                  <option value="2">2 - Poor</option>
+                  <option value="1">1 - Very poor</option>
+                </select>
+              </label>
+              <label class="field">
+                Your experience
+                <textarea id="feedbackExperience" placeholder="Tell us about bus timing, comfort, driver update, or route info" required></textarea>
+              </label>
+              <button class="primary-button" type="submit">Send feedback</button>
+            </form>
+            <div class="driver-status" id="feedbackList"></div>
+          </div>
         </section>
       </section>
 
@@ -746,7 +790,8 @@
         filter: "all",
         selectedNumber: "",
         favorites: JSON.parse(localStorage.getItem("busFavorites") || "[]"),
-        driverUpdates: {}
+        driverUpdates: {},
+        feedback: []
       };
 
       const roleButtons = document.querySelectorAll("[data-role]");
@@ -781,6 +826,13 @@
       const adminAddPanel = document.querySelector("#adminAddPanel");
       const adminManagePanel = document.querySelector("#adminManagePanel");
       const adminMessage = document.querySelector("#adminMessage");
+      const feedbackForm = document.querySelector("#feedbackForm");
+      const feedbackName = document.querySelector("#feedbackName");
+      const feedbackRating = document.querySelector("#feedbackRating");
+      const feedbackExperience = document.querySelector("#feedbackExperience");
+      const feedbackMessage = document.querySelector("#feedbackMessage");
+      const feedbackList = document.querySelector("#feedbackList");
+      const feedbackCount = document.querySelector("#feedbackCount");
 
       function minutesFromTime(time) {
         const [hours, minutes] = time.split(":").map(Number);
@@ -824,6 +876,15 @@
         return routes.filter((route) => routeMatchesQuery(route) && routeMatchesFilter(route));
       }
 
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
       async function apiRequest(path, options = {}) {
         const response = await fetch(`${API_BASE}${path}`, {
           headers: { "Content-Type": "application/json" },
@@ -840,18 +901,21 @@
 
       async function loadServerData() {
         try {
-          const [serverRoutes, serverDriverUpdates] = await Promise.all([
+          const [serverRoutes, serverDriverUpdates, serverFeedback] = await Promise.all([
             apiRequest("/api/routes"),
-            apiRequest("/api/driver-updates")
+            apiRequest("/api/driver-updates"),
+            apiRequest("/api/feedback")
           ]);
           routes = serverRoutes;
           state.driverUpdates = serverDriverUpdates;
+          state.feedback = serverFeedback;
           if (!routes.some((route) => route.number === state.selectedNumber)) {
             state.selectedNumber = routes[0]?.number || "";
           }
         } catch {
           routes = defaultRoutes;
           state.driverUpdates = {};
+          state.feedback = [];
           state.selectedNumber = routes[0]?.number || "";
           showAdminMessage("Start the backend server to save shared data.");
         }
@@ -919,6 +983,12 @@
         window.setTimeout(() => adminMessage.classList.remove("is-visible"), 2500);
       }
 
+      function showFeedbackMessage(text) {
+        feedbackMessage.textContent = text;
+        feedbackMessage.classList.add("is-visible");
+        window.setTimeout(() => feedbackMessage.classList.remove("is-visible"), 2500);
+      }
+
       function populateDriverRouteOptions() {
         const selectedRoute = driverRoute.value;
         if (!routes.length) {
@@ -980,6 +1050,28 @@
                 <p class="route-meta">${route.from} to ${route.to}</p>
               </div>
               <button class="danger-button" type="button" data-delete-route="${route.number}">Delete</button>
+            </div>
+          `)
+          .join("");
+      }
+
+      function renderFeedback() {
+        feedbackCount.textContent = state.feedback.length;
+        if (!state.feedback.length) {
+          feedbackList.innerHTML = '<p class="no-results">No feedback yet. Share your first passenger experience.</p>';
+          return;
+        }
+
+        feedbackList.innerHTML = state.feedback
+          .slice(-4)
+          .reverse()
+          .map((item) => `
+            <div class="status-row">
+              <div>
+                <strong>${escapeHtml(item.name)}</strong>
+                <p class="route-meta">${escapeHtml(item.experience)}</p>
+              </div>
+              <span>${"★".repeat(Number(item.rating))}</span>
             </div>
           `)
           .join("");
@@ -1076,6 +1168,7 @@
         renderDetails();
         renderDriverStatus();
         renderAdminRoutes();
+        renderFeedback();
       }
 
       roleButtons.forEach((button) => {
@@ -1137,6 +1230,27 @@
           render();
         } catch (error) {
           showAdminMessage(error.message);
+        }
+      });
+
+      feedbackForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        try {
+          const feedback = await apiRequest("/api/feedback", {
+            method: "POST",
+            body: JSON.stringify({
+              name: feedbackName.value.trim(),
+              rating: feedbackRating.value,
+              experience: feedbackExperience.value.trim()
+            })
+          });
+          state.feedback = [...state.feedback, feedback];
+          feedbackForm.reset();
+          feedbackRating.value = "5";
+          showFeedbackMessage("Thanks. Your feedback was saved.");
+          renderFeedback();
+        } catch (error) {
+          showFeedbackMessage(error.message);
         }
       });
 

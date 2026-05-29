@@ -8,6 +8,7 @@ A local bus timing web app with passenger, driver, admin, and backend API featur
 - View next bus timing, stops, fare, and travel duration
 - Driver can update current stop, delay, and trip status
 - Passenger screen refreshes backend updates automatically
+- Passengers can submit feedback with rating and experience details
 - Admin can add and delete bus routes
 - Route and driver data is saved in `data.json`
 
